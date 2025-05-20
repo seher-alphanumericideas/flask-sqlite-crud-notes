@@ -1,9 +1,12 @@
 from flask import Flask, request, jsonify, render_template
 import sqlite3
 
+#Initialize Flask app
 app = Flask(__name__)
 
 def init_db():
+    #Initialize the SQLite database and create the "notes" table if it does not exist
+    #This ensures the backend has the required table structure on the first run
     conn = sqlite3.connect('database.db')
     cursor = conn.cursor()
     cursor.execute("""
@@ -16,14 +19,18 @@ def init_db():
     conn.commit()
     conn.close()
 
+#Run database initialization on app startup 
 init_db()
 
 @app.route('/')
 def index():
+    #Render the main frontend HTML page located in the templates folder
     return render_template('index.html')
 
 @app.route('/notes', methods=['GET'])
 def get_notes():
+    #Retrieve all notes from the database
+    #Returns: JSON: a list of all notes with their id, title, and content
     conn = sqlite3.connect('database.db')
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM notes")
@@ -33,6 +40,9 @@ def get_notes():
 
 @app.route('/notes/<int:note_id>', methods=['GET'])
 def get_note(note_id):
+    #Retrieve a single note by its ID
+    #Args: note_id(int): The ID of the note to retrieve
+    #Returns: JSON: A note object if found, otherwise an error message
     conn = sqlite3.connect('database.db')
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM notes WHERE id=?", (note_id,))
@@ -44,6 +54,9 @@ def get_note(note_id):
 
 @app.route('/notes', methods=['POST'])
 def create_note():
+    #Create a new note using the JSON body of the request
+    #Expects: {"title": "Note Title", "content": "Note Content"}
+    #Returns: JSON: Success message with status code 201
     data = request.json
     title = data.get('title')
     content = data.get('content')
@@ -57,6 +70,9 @@ def create_note():
 
 @app.route('/notes/<int:note_id>', methods=['PUT'])
 def update_note(note_id):
+    #Updating an existing note using its ID and data from the request body
+    #Expects: {"title": "Updated Title", "content": "Updated Content"}
+    #Returns: JSON: Success message after update
     data = request.json
     title = data.get('title')
     content = data.get('content')
@@ -70,6 +86,9 @@ def update_note(note_id):
 
 @app.route('/notes/<int:note_id>', methods=['DELETE'])
 def delete_note(note_id):
+    #Delete a note from the database using its ID
+    #Args: note_id(int): The ID of the note to delete
+    #Returns: JSON: Success message after deletion
     conn = sqlite3.connect('database.db')
     cursor = conn.cursor()
     cursor.execute("DELETE FROM notes WHERE id=?", (note_id,))
@@ -78,4 +97,5 @@ def delete_note(note_id):
     return jsonify({'message': 'Note deleted'})
 
 if __name__ == '__main__':
+    #Start the Flask development server
     app.run(debug=True)
